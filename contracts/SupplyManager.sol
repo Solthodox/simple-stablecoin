@@ -51,8 +51,8 @@ contract SupplyManager is PriceConsumerV3 , ReentrancyGuard , Context{
     function swapETH() public payable{
         int256 currentPrice = getLatestPrice();
         uint256 tokenAmount = msg.value * uint256(currentPrice) /(10**8);
-        require(_token.mint(tokenAmount));
         require(_token.transfer(_msgSender() , tokenAmount));
+        require(_token.mint(tokenAmount));
         if( (totalAssets() * uint256(currentPrice) /(10**8) * alertThreshold/ 100) <= totalSupply()  ){
             emit alertThresholdHit(block.timestamp);
 
@@ -93,5 +93,5 @@ contract SupplyManager is PriceConsumerV3 , ReentrancyGuard , Context{
         return address(this).balance;
     }
 
-    fallback() external payable{}
+    
 }
