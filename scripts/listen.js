@@ -1,5 +1,13 @@
-import {ethers} from "hardat"
+const {ethers} = require("hardhat")
 
 exports.Listen = async function(contractInstance){
-    contractInstance.on("")
+    console.log(`Listening to : ${contractInstance.address}`)
+    contractInstance.on("alertThresholdHit", (timestamp)=>{
+        console.log(`${timestamp} : ALERT THRESHOLD HIT!`)
+        
+    })
+
+    contractInstance.on("emergencyThresholdHit" , (timestamp)=>{
+        console.log(`${timestamp} : EMERGENCY THRESHOLD HIT! CONTRACT PAUSED...`)
+    })
 }
