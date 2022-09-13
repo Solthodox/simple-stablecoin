@@ -6,9 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 
-interface Treasury {
-    function requestFunds() external;
-}
 interface IStableCoin is IERC20{
     function mint(uint256 amount) external returns(bool);
     function burn(uint256 amount) external returns(bool);
@@ -29,7 +26,7 @@ contract SupplyManager is PriceConsumerV3 , ReentrancyGuard , Context{
     uint256  public alertThreshold;
     uint256  public emergencyThreshold;
     
-
+    
     constructor(address tokenAddress , uint256 alertThreshold , uint256 emergenyThreshold ){
         _token = IStableCoin(tokenAddress);
         alertThreshold = alertThreshold;
@@ -53,14 +50,7 @@ contract SupplyManager is PriceConsumerV3 , ReentrancyGuard , Context{
         uint256 tokenAmount = msg.value * uint256(currentPrice) /(10**8);
         require(_token.transfer(_msgSender() , tokenAmount));
         require(_token.mint(tokenAmount));
-        if( (totalAssets() * uint256(currentPrice) /(10**8) * alertThreshold/ 100) <= totalSupply()  ){
-            emit alertThresholdHit(block.timestamp);
-
-        }
-        else if ((totalAssets() * uint256(currentPrice) /(10**8) * emergencyThreshold/ 100) <= totalSupply() ){
-            _token.pause();
-            emit emergencyThresholdHit(block.timestamp);
-        }
+        _updateUsdRatio(currentPrice);
 
     }
     /**
@@ -75,13 +65,7 @@ contract SupplyManager is PriceConsumerV3 , ReentrancyGuard , Context{
         uint256 ethAmount = amount  * (10**8) / uint256(currentPrice);
         (bool success , ) = _msgSender().call{ value : ethAmount}('');
         require(success );
-        if( (totalAssets() * (10**8) / uint256(currentPrice)* alertThreshold/ 100) <= totalSupply()  ){
-            emit alertThresholdHit(block.timestamp);
-        }
-        else if ((totalAssets() * (10**8) / uint256(currentPrice) * emergencyThreshold/ 100) <= totalSupply() ){
-            _token.pause();
-            emit emergencyThresholdHit(block.timestamp);
-        }
+        _updateUsdRatio(currentPrice);
        
     }
     //the stablecoin's supply
@@ -92,6 +76,18 @@ contract SupplyManager is PriceConsumerV3 , ReentrancyGuard , Context{
     function totalAssets() public view returns(uint256){
         return address(this).balance;
     }
+    /**
+    @notice Checks if the token has enouugh liquidity 
+     */
+    function _updateUsdRatio(int256 latestPrice) private{
+        uint256 alertThresholdValue = totalAssets() * uint256(latestPrice) /(10**8) * alertThreshold/ 100;
+        if( alertThresholdValue <= totalSupply()  ){
+            emit alertThresholdHit(block.timestamp);
 
-    
+        }
+        else if ((totalAssets() * uint256(latestPrice) /(10**8) * emergencyThreshold/ 100) <= totalSupply() ){
+            _token.pause();
+            emit emergencyThresholdHit(block.timestamp);
+        }
+    }
 }

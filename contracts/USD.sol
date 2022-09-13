@@ -35,18 +35,21 @@ Pausable{
         _;
     }
 
-    address private _supplyManager;
-    uint256 public fees;
-    uint256 public rewardRatePerSecond;
+    address private _supplyManager; //supply manager address
+    uint256 public fees; // the fees for using the stablecoin
+
     constructor(
         string memory name,
         string memory symbol
     )
     ERC20(name , symbol) Ownable(){}
 
-    function pause()  public onlyOwner{
+    /**
+     */
+    function pause()  public onlyOwnerOrAdmin{
         _pause();
     }
+
     function unpause() public  onlyOwner{
         _unpause();
     }
